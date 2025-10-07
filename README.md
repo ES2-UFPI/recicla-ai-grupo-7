@@ -1,6 +1,14 @@
+<div align="center">
+  <img src="./assets/logo.png" width="300" />
+</div>
+
 <h1 align="center">RECICLA AÍ</h1>
 
 Este é o repositório principal do projeto **Recicla Aí**, uma iniciativa dedicada a promover a reciclagem e a sustentabilidade ambiental. Nosso objetivo é facilitar o processo de coleta e reciclagem de materiais recicláveis por meio de soluções tecnológicas.
+
+## Repositórios Satélites
+- [Frontend](https://github.com/ES2-UFPI/recicla-ai-grupo-7-frontend)
+- [Backend](https://github.com/ES2-UFPI/recicla-ai-grupo-7-backend)
 
 ## Colaboradores
 
