@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recicla-ai-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-recicla_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-recicla_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-recicla_ai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - recicla-ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-recicla_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recicla-ai-backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-recicla_user}:${POSTGRES_PASSWORD:-recicla_pass}@postgres:5432/${POSTGRES_DB:-recicla_ai}
+      API_KEY: ${API_KEY}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+    networks:
+      - recicla-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  recicla-ai-network:
+    driver: bridge

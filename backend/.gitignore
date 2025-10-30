@@ -1,0 +1,10 @@
+venv/
+.env/
+.env
+__pycache__/
+sql/generated/
+
+# SQLite database (if used)
+*.db
+*.sqlite
+*.sqlite3
