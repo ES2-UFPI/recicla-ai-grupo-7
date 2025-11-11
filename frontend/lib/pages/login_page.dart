@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -158,7 +163,31 @@ class _LoginPageState extends State<LoginPage> {
                       elevation: 4,
                     ),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/home');
+                      try {
+                        ApiService.authLogin(
+                          _emailController.text,
+                          _passwordController.text,
+                        ).then((loginResponse) {
+                          final body = jsonDecode(loginResponse.body);
+                          if (loginResponse.statusCode == 200) {
+                            final accessToken = body["data"]["access_token"];
+                            final refreshTOken = body["data"]["refresh_token"];
+                            context.read<AuthCubit>().setAuth(
+                                  accessToken,
+                                  refreshTOken,
+                                );
+                            Navigator.pushReplacementNamed(context, '/home');
+                          } else if (loginResponse.statusCode == 400) {
+                            
+                          } else if (loginResponse.statusCode == 422) {
+                            
+                          } else {
+                            
+                          }
+                        } );
+                      } catch (e) {
+                        
+                      }
                     },
                     icon: const Icon(Icons.login_rounded),
                     label: const Text(

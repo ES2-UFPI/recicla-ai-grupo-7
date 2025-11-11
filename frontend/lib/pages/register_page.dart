@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,6 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String _role = 'PRODUTOR';
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -206,6 +208,45 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 30),
 
+                  // Campo de Role (PRODUTOR, COLETOR, COOPERATIVA )
+                  DropdownButtonFormField<String>(
+                    initialValue: _role,
+                    decoration: InputDecoration(
+                      labelText: "Selecione seu papel",
+                      prefixIcon: const Icon(Icons.person_search_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'PRODUTOR',
+                        child: Text('Produtor'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'COLETOR',
+                        child: Text('Coletor'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'COOPERATIVA',
+                        child: Text('Cooperativa'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _role = value!;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Selecione seu papel";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 30),
+
                   // Botão de Registrar
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -220,9 +261,25 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       elevation: 4,
                     ),
-                    onPressed: ()=>{
-                      //_register
-                      Navigator.pushReplacementNamed(context, '/home')
+                    onPressed: () {
+                      try {
+                        ApiService.authSignup(
+                          _nameController.text,
+                          _emailController.text,
+                          _passwordController.text,
+                          _role,
+                        ).then((response) {
+                          if (response.statusCode == 200) {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          } else if (response.statusCode == 400) {
+                            
+                          } else {
+                            
+                          }
+                        });
+                      } catch (e) {
+                        
+                      }
                     },
                     icon: const Icon(Icons.app_registration_rounded),
                     label: const Text(

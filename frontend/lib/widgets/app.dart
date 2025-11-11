@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
 import 'package:recicla_ai_grupo_7_frontend/blocs/settings_bloc.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/app_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/collection_points_page.dart';
@@ -22,8 +23,11 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => SettingsCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => SettingsCubit()),
+        BlocProvider(create: (_) => AuthCubit()),
+      ],
       child: BlocBuilder<SettingsCubit, Settings>(
         builder: (context, settings) => MaterialApp(
           debugShowCheckedModeBanner: false,

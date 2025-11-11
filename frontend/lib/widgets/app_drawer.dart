@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -72,7 +75,20 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.logout),
             title: Text('Sair'),
             onTap: () {
-              Navigator.of(context).pushReplacementNamed('/');
+              try {
+                ApiService.authLogout(
+                  'Bearer ${context.read<AuthCubit>().state?.accessToken}',
+                ).then((response) {
+                  if (response.statusCode == 200) {
+                    context.read<AuthCubit>().clearAuth();
+                    Navigator.pushReplacementNamed(context, '/');
+                  } else {
+                    // Tratar erro de logout
+                  }
+                });
+              } catch (e) {
+                // Tratar exceção
+              }
             },
           ),
           

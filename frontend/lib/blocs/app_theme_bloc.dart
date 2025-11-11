@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Tema principal do app de reciclagem 🌿
+/// Tema principal do app de reciclagem
 /// Usa tons de verde e Material 3.
 class AppTheme {
   final ThemeData themeData;
