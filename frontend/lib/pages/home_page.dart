@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_app_bar.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_bottom_nav_bar.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_drawer.dart';
@@ -11,10 +16,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<Map<String, dynamic>> _userDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userDataFuture = _fetchUserData();
+  }
+
+  Future<Map<String, dynamic>> _fetchUserData() async {
+    final bearerToken = context.read<AuthCubit>().state?.accessToken ?? '';
+    final response = await ApiService.authMe(bearerToken);
+    return jsonDecode(response.body);
+  }
+
   @override
   Widget build(BuildContext context) {
-    
-    // Determina o número de colunas com base na largura da tela
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth > 600 ? 2 : 1;
 
@@ -22,122 +39,150 @@ class _HomePageState extends State<HomePage> {
       appBar: AppAppBar(title: "Recicla Aí"),
       endDrawer: AppDrawer(),
       bottomNavigationBar: AppBottomNavBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _userDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            Text(
-              "Bem-vindo ao Recicla Aí!",
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Conectamos geradores de resíduos, coletores e recicladoras, incentivando a reciclagem por meio de recompensas e educação ambiental.",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Erro ao carregar dados do usuário.",
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            );
+          }
 
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: crossAxisCount,
-              childAspectRatio: 3 / 4,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
+          final role = snapshot.data?['data']?['role'] ?? 'USER';
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _HomePageCard(
-                  redirectRoute: '/schedule',
-                  icon: Icons.calendar_today,
-                  title: "Agendamento de Coleta",
-                  description: "Agende datas e horários para coleta dos seus resíduos.",
+                Text(
+                  "Bem-vindo ao Recicla Aí!",
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
-                _HomePageCard(
-                  redirectRoute: '/notifications',
-                  icon: Icons.notifications,
-                  title: "Notificações",
-                  description: "Receba alertas sobre coletas, pontos e novidades.",
+                const SizedBox(height: 8),
+                Text(
+                  "Conectamos geradores de resíduos, coletores e recicladoras, incentivando a reciclagem por meio de recompensas e educação ambiental.",
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                _HomePageCard(
-                  redirectRoute: '/points',
-                  icon: Icons.map,
-                  title: "Pontos de Coleta",
-                  description: "Visualize pontos de coleta próximos na sua região.",
-                ),
-                _HomePageCard(
-                  redirectRoute: '/reward',
-                  icon: Icons.emoji_events,
-                  title: "Recompensas",
-                  description: "Ganhe pontos e recompensas por reciclagem correta.",
-                ),
-                _HomePageCard(
-                  redirectRoute: '/education',
-                  icon: Icons.school,
-                  title: "Educação Ambiental",
-                  description: "Dicas e quizzes sobre separação correta dos resíduos.",
-                ),
-                _HomePageCard(
-                  redirectRoute: '/history',
-                  icon: Icons.history,
-                  title: "Histórico",
-                  description: "Acompanhe suas coletas e impacto ambiental.",
-                ),
-              ],
-            ),
+                const SizedBox(height: 24),
 
-            const SizedBox(height: 24),
-
-            // Seção de motivação / call to action
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: 3 / 4,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
                   children: [
-                    Text(
-                      "Comece a reciclar hoje!",
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                    if (role == 'ADMIN')
+                      _HomePageCard(
+                        redirectRoute: '/register-material',
+                        icon: Icons.add_box,
+                        title: "Cadastrar Material",
+                        description: "Adicione novos tipos de materiais recicláveis ao sistema.",
+                      ),
+                    _HomePageCard(
+                      redirectRoute: '/schedule',
+                      icon: Icons.calendar_today,
+                      title: "Agendamento de Coleta",
+                      description: "Agende datas e horários para coleta dos seus resíduos.",
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Agende sua coleta, ganhe recompensas e ajude o meio ambiente.",
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                    _HomePageCard(
+                      redirectRoute: '/notifications',
+                      icon: Icons.notifications,
+                      title: "Notificações",
+                      description: "Receba alertas sobre coletas, pontos e novidades.",
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // ---> ação para agendar coleta
-                      },
-                      icon: const Icon(Icons.add_shopping_cart),
-                      label: const Text("Agendar Coleta"),
-                      style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
-                            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
-                            foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
-                          ),
+                    _HomePageCard(
+                      redirectRoute: '/points',
+                      icon: Icons.map,
+                      title: "Pontos de Coleta",
+                      description: "Visualize pontos de coleta próximos na sua região.",
+                    ),
+                    _HomePageCard(
+                      redirectRoute: '/reward',
+                      icon: Icons.emoji_events,
+                      title: "Recompensas",
+                      description: "Ganhe pontos e recompensas por reciclagem correta.",
+                    ),
+                    _HomePageCard(
+                      redirectRoute: '/education',
+                      icon: Icons.school,
+                      title: "Educação Ambiental",
+                      description: "Dicas e quizzes sobre separação correta dos resíduos.",
+                    ),
+                    _HomePageCard(
+                      redirectRoute: '/history',
+                      icon: Icons.history,
+                      title: "Histórico",
+                      description: "Acompanhe suas coletas e impacto ambiental.",
                     ),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 24),
+
+                // Call to action
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          "Comece a reciclar hoje!",
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Agende sua coleta, ganhe recompensas e ajude o meio ambiente.",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/schedule');
+                          },
+                          icon: const Icon(Icons.add_shopping_cart),
+                          label: const Text("Agendar Coleta"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                            foregroundColor: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
+// === _HomePageCard (sem alterações) ===
 class _HomePageCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -160,7 +205,6 @@ class _HomePageCard extends StatelessWidget {
           final width = constraints.maxWidth;
           final height = constraints.maxHeight;
 
-          // Ajusta tamanhos proporcionalmente kkkkk
           final iconSize = width * 0.25;
           final titleFont = width * 0.09;
           final bodyFont = width * 0.06;
@@ -175,14 +219,11 @@ class _HomePageCard extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(width * 0.07),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Conteúdo principal (ícone, título, descrição)
                   Flexible(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Container(
                           decoration: BoxDecoration(
@@ -226,7 +267,6 @@ class _HomePageCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: spacing),
-                  // Botão com tamanho fixo
                   SizedBox(
                     width: double.infinity,
                     height: height * 0.15,

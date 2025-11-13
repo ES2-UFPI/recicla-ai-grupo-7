@@ -201,7 +201,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   // Dropdown de Papel
                   DropdownButtonFormField<String>(
-                    value: _role,
+                    initialValue: _role,
                     decoration: InputDecoration(
                       labelText: "Selecione seu papel",
                       prefixIcon: const Icon(Icons.person_search_outlined),

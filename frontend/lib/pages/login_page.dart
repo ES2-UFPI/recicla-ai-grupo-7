@@ -253,7 +253,6 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         }
                       }
-                      print("Login pressionado $_errorMessages");
                     },
                     icon: const Icon(Icons.login_rounded),
                     label: const Text(

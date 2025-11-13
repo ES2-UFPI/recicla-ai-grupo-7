@@ -11,6 +11,7 @@ import 'package:recicla_ai_grupo_7_frontend/pages/login_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/notifications_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/edit_profile_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/profile_page.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/register_material_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/register_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/reward_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/schedule_page.dart';
@@ -46,23 +47,6 @@ class App extends StatelessWidget {
 
             // Rota estática
             switch (uri.path) {
-              /*
-                {
-                '/': (_) => const AppPage(),
-                '/login': (_) => const LoginPage(),
-                '/register': (_) => const RegisterPage(),
-
-                '/home': (_) => const HomePage(),
-                '/settings': (_) => const SettingsPage(),
-
-                '/schedule': (_) => const SchedulePage(),
-                '/notifications': (_) => const NotificationsPage(),
-                '/education': (_) => const EducationPage(),
-                '/points': (_) => const CollectionPoints(),
-                '/reward': (_) => const RewardPage(),
-                '/history': (_) => const HistoryPage(),
-              },
-              */
               case '/':
                 return MaterialPageRoute(builder: (_) => const AppPage());
               case '/login':
@@ -90,7 +74,10 @@ class App extends StatelessWidget {
                 return MaterialPageRoute(builder: (_) => const HistoryPage());
               case '/education':
                 return MaterialPageRoute(builder: (_) => const EducationPage());
-            
+
+              // ADMIN
+              case "/register-material":
+                return MaterialPageRoute(builder: (_) => const RegisterMaterialPage());
             }
 
             // Rota dinâmica: /education/video/:id
