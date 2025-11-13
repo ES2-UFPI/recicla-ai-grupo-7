@@ -110,7 +110,7 @@ class AppPage extends StatelessWidget {
 
                 // Versão
                 Text(
-                  "Versão 1.0.0",
+                  "Versão 0.1.0",
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey[500],
                       ),

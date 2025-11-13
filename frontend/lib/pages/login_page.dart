@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  List<String> _errorMessages = [];
 
   @override
   void dispose() {
@@ -72,18 +73,18 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     "Bem-vindo de volta 👋",
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
 
                   const SizedBox(height: 8),
 
                   Text(
                     "Faça login para continuar",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
                   ),
 
                   const SizedBox(height: 40),
@@ -147,7 +148,38 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   const SizedBox(height: 30),
-
+                  // Exibição de mensagens de erro
+                  if (_errorMessages.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        border: Border.all(color: Colors.red.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _errorMessages
+                            .map(
+                              (msg) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                ),
+                                child: Text(
+                                  "• $msg",
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  const SizedBox(height: 30),
                   // Botão de Login
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -162,32 +194,66 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       elevation: 4,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
+
+                      setState(() {
+                        _errorMessages = []; // Limpa erros anteriores
+                      });
+
                       try {
-                        ApiService.authLogin(
+                        final loginResponse = await ApiService.authLogin(
                           _emailController.text,
                           _passwordController.text,
-                        ).then((loginResponse) {
-                          final body = jsonDecode(loginResponse.body);
-                          if (loginResponse.statusCode == 200) {
-                            final accessToken = body["data"]["access_token"];
-                            final refreshTOken = body["data"]["refresh_token"];
+                        );
+
+                        final body = jsonDecode(loginResponse.body);
+
+                        if (loginResponse.statusCode == 200) {
+                          final accessToken = body["data"]["access_token"];
+                          final refreshToken = body["data"]["refresh_token"];
+
+                          if (mounted) {
                             context.read<AuthCubit>().setAuth(
-                                  accessToken,
-                                  refreshTOken,
-                                );
+                              accessToken,
+                              refreshToken,
+                            );
                             Navigator.pushReplacementNamed(context, '/home');
-                          } else if (loginResponse.statusCode == 400) {
-                            
-                          } else if (loginResponse.statusCode == 422) {
-                            
-                          } else {
-                            
                           }
-                        } );
+                        } else if (loginResponse.statusCode == 400 ||
+                            loginResponse.statusCode == 422) {
+                          final errors =
+                              (body["errors"] as List<dynamic>?)
+                                  ?.cast<String>() ??
+                              ["Erro desconhecido"];
+
+                          if (mounted) {
+                            setState(() {
+                              _errorMessages = List<String>.from(
+                                errors,
+                              ); // ← Nova lista!
+                            });
+                          }
+                        } else {
+                          if (mounted) {
+                            setState(() {
+                              _errorMessages = [
+                                "Erro no servidor: ${loginResponse.statusCode}",
+                              ];
+                            });
+                          }
+                        }
                       } catch (e) {
-                        
+                        if (mounted) {
+                          setState(() {
+                            _errorMessages = [
+                              "Erro de conexão. Verifique sua internet.",
+                              // e.toString() // remova em produção
+                            ];
+                          });
+                        }
                       }
+                      print("Login pressionado $_errorMessages");
                     },
                     icon: const Icon(Icons.login_rounded),
                     label: const Text(
@@ -216,10 +282,10 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Versão
                   Text(
-                    "Versão 1.0.0",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
-                        ),
+                    "Versão 0.1.0",
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
                   ),
                 ],
               ),

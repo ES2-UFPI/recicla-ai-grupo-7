@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 
@@ -17,6 +19,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String _role = 'PRODUTOR';
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  List<String> _errorMessages = [];
 
   @override
   void dispose() {
@@ -25,14 +28,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  // ignore: unused_element
-  void _register() {
-    if (_formKey.currentState!.validate()) {
-      // Por enquanto, apenas redireciona para a Home
-      Navigator.pushReplacementNamed(context, '/home');
-    }
   }
 
   @override
@@ -47,12 +42,10 @@ class _RegisterPageState extends State<RegisterPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: colorScheme.primary),
           onPressed: () {
-            // volta para a AppPage
             Navigator.pushReplacementNamed(context, '/');
           },
         ),
       ),
-
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -73,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   // Título
                   Text(
-                    "Crie sua conta 🌱",
+                    "Crie sua conta",
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -105,6 +98,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       if (value == null || value.isEmpty) {
                         return "Por favor, insira seu nome";
                       }
+                      if (value.trim().split(' ').length < 2) {
+                        return "Insira nome e sobrenome";
+                      }
                       return null;
                     },
                   ),
@@ -126,7 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       if (value == null || value.isEmpty) {
                         return "Por favor, insira seu e-mail";
                       }
-                      if (!value.contains('@')) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                         return "E-mail inválido";
                       }
                       return null;
@@ -144,9 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                          _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -180,14 +174,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       prefixIcon: const Icon(Icons.lock_reset_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isConfirmPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                          _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible;
+                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
                           });
                         },
                       ),
@@ -208,9 +199,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 30),
 
-                  // Campo de Role (PRODUTOR, COLETOR, COOPERATIVA )
+                  // Dropdown de Papel
                   DropdownButtonFormField<String>(
-                    initialValue: _role,
+                    value: _role,
                     decoration: InputDecoration(
                       labelText: "Selecione seu papel",
                       prefixIcon: const Icon(Icons.person_search_outlined),
@@ -219,18 +210,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     items: const [
-                      DropdownMenuItem(
-                        value: 'PRODUTOR',
-                        child: Text('Produtor'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'COLETOR',
-                        child: Text('Coletor'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'COOPERATIVA',
-                        child: Text('Cooperativa'),
-                      ),
+                      DropdownMenuItem(value: 'PRODUTOR', child: Text('Produtor')),
+                      DropdownMenuItem(value: 'COLETOR', child: Text('Coletor')),
+                      DropdownMenuItem(value: 'COOPERATIVA', child: Text('Cooperativa')),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -238,56 +220,109 @@ class _RegisterPageState extends State<RegisterPage> {
                       });
                     },
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Selecione seu papel";
-                      }
+                      if (value == null) return "Selecione seu papel";
                       return null;
                     },
                   ),
 
                   const SizedBox(height: 30),
 
+                  // Exibição de Erros
+                  if (_errorMessages.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        border: Border.all(color: Colors.red.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _errorMessages
+                            .map((msg) => Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: Text(
+                                    "• $msg",
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+
                   // Botão de Registrar
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 32,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 4,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
+
+                      setState(() {
+                        _errorMessages = [];
+                      });
+
                       try {
-                        ApiService.authSignup(
-                          _nameController.text,
-                          _emailController.text,
+                        final response = await ApiService.authSignup(
+                          _nameController.text.trim(),
+                          _emailController.text.trim(),
                           _passwordController.text,
                           _role,
-                        ).then((response) {
-                          if (response.statusCode == 200) {
+                        );
+
+                        final body = jsonDecode(response.body);
+
+                        if (response.statusCode == 201 || response.statusCode == 200) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Cadastro realizado com sucesso! Faça login."),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                             Navigator.pushReplacementNamed(context, '/login');
-                          } else if (response.statusCode == 400) {
-                            
-                          } else {
-                            
                           }
-                        });
+                        } else if (response.statusCode == 400 || response.statusCode == 422) {
+                          final errors = (body["errors"] as List<dynamic>?)?.cast<String>() ??
+                              ["Erro ao processar cadastro."];
+
+                          if (mounted) {
+                            setState(() {
+                              _errorMessages = List<String>.from(errors);
+                            });
+                          }
+                        } else {
+                          if (mounted) {
+                            setState(() {
+                              _errorMessages = ["Erro no servidor: ${response.statusCode}"];
+                            });
+                          }
+                        }
                       } catch (e) {
-                        
+                        if (mounted) {
+                          setState(() {
+                            _errorMessages = [
+                              "Erro de conexão. Verifique sua internet e tente novamente.",
+                            ];
+                          });
+                        }
                       }
                     },
                     icon: const Icon(Icons.app_registration_rounded),
                     label: const Text(
                       "Registrar-se",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
 
@@ -308,7 +343,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   // Versão
                   Text(
-                    "Versão 1.0.0",
+                    "Versão 0.1.0",
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[500],
                         ),
