@@ -251,8 +251,10 @@ class ProfilePage extends StatelessWidget {
         ),
         );
       } else if (snapshot.hasData && snapshot.data!.statusCode == 401) {
+        Navigator.pushReplacementNamed(context, '/');
         return const Center(child: Text("Não autorizado"));
       } else {
+        Navigator.pushReplacementNamed(context, '/');
         return const Center(child: Text("Erro desconhecido"));
       }
       },

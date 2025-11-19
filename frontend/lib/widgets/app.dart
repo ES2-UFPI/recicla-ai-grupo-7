@@ -7,12 +7,15 @@ import 'package:recicla_ai_grupo_7_frontend/pages/collection_points_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/education_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/history_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/home_page.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/list_materials_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/login_page.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/my_pickups_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/notifications_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/edit_profile_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/profile_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/register_material_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/register_page.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/register_pickup_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/reward_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/schedule_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/settings_page.dart';
@@ -75,9 +78,16 @@ class App extends StatelessWidget {
               case '/education':
                 return MaterialPageRoute(builder: (_) => const EducationPage());
 
+              case '/list-materials':
+                return MaterialPageRoute(builder: (_) => const ListMaterialsPage());
+              case '/register-pickup':
+                return MaterialPageRoute(builder: (_) => const RegisterPickupPage());
+              case '/my-pickups':
+                return MaterialPageRoute(builder: (_) => const MyPickupsPage());
               // ADMIN
               case "/register-material":
                 return MaterialPageRoute(builder: (_) => const RegisterMaterialPage());
+
             }
 
             // Rota dinâmica: /education/video/:id

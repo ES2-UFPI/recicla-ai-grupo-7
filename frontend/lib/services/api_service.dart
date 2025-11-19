@@ -106,4 +106,62 @@ class ApiService {
       throw Exception('Failed to register material: $e');
     }
   }
+
+  static const _listMaterialsEndpoint =
+    "http://${AppConfig.apiHost}:${AppConfig.apiPort}/residue/list_materials";
+  static Future<http.Response> listMaterials(String bearerToken) async {
+    final url = Uri.parse(_listMaterialsEndpoint);
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $bearerToken',
+        },
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Failed to list materials: $e');
+    }
+  }
+
+  static const String _registerPickupEndpoint =
+      "http://${AppConfig.apiHost}:${AppConfig.apiPort}/residue/register_pickup";
+  static Future<http.Response> registerPickup({
+    required String bearerToken,
+    required Map<String, dynamic> pickupData,
+  }) async {
+    final url = Uri.parse(_registerPickupEndpoint);
+    try {
+      return http.post(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(pickupData),
+      );
+    } catch (e) {
+      throw Exception('Failed to register pickup: $e');
+    }
+  }
+
+  static const String _myPickupsEndpoint =
+    "http://${AppConfig.apiHost}:${AppConfig.apiPort}/residue/my_pickups";
+
+  static Future<http.Response> getMyPickups(String bearerToken) async {
+    final url = Uri.parse(_myPickupsEndpoint);
+    try {
+      return http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch pickups: $e');
+    }
+  }
+
 }

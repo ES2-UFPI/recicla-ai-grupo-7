@@ -9,10 +9,10 @@ class AppBottomNavBar extends StatelessWidget {
         Navigator.pushNamed(context, '/home');
         break;
       case 1:
-        Navigator.pushNamed(context, '/points');
+        Navigator.pushNamed(context, '/register-pickup');
         break;
       case 2:
-        Navigator.pushNamed(context, '/reward');
+        Navigator.pushNamed(context, '/my-pickups');
         break;
       case 3:
         Navigator.pushNamed(context, '/education');
@@ -37,11 +37,11 @@ class AppBottomNavBar extends StatelessWidget {
           label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.place_rounded),
+          icon: Icon(Icons.add_shopping_cart_rounded),
           label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.emoji_events),
+          icon: Icon(Icons.history_rounded),
           label: '',
         ),
         BottomNavigationBarItem(

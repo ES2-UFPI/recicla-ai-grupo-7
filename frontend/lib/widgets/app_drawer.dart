@@ -76,9 +76,7 @@ class AppDrawer extends StatelessWidget {
             title: Text('Sair'),
             onTap: () {
               try {
-                ApiService.authLogout(
-                  'Bearer ${context.read<AuthCubit>().state?.accessToken}',
-                ).then((response) {
+                ApiService.authLogout(context.read<AuthCubit>().state!.accessToken,).then((response) {
                   if (response.statusCode == 200) {
                     context.read<AuthCubit>().clearAuth();
                     Navigator.pushReplacementNamed(context, '/');

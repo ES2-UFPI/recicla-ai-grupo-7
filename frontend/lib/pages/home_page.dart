@@ -91,6 +91,31 @@ class _HomePageState extends State<HomePage> {
                         description: "Adicione novos tipos de materiais recicláveis ao sistema.",
                       ),
                     _HomePageCard(
+                        redirectRoute: '/list-materials',
+                        icon: Icons.list,
+                        title: "Listar Materiais",
+                        description: "Listar todos os tipos de materiais recicláveis ao sistema.",
+                      ),
+                    _HomePageCard(
+                      redirectRoute: '/register-pickup',
+                      icon: Icons.add_shopping_cart,
+                      title: "Registrar Coleta",
+                      description: "Agende uma nova coleta de resíduos recicláveis.",
+                    ),
+                    _HomePageCard(
+                      redirectRoute: '/my-pickups',
+                      icon: Icons.history,
+                      title: "Minhas Coletas",
+                      description: "Veja o histórico e status das suas coletas agendadas.",
+                    ),
+                    _HomePageCard(
+                      redirectRoute: '/education',
+                      icon: Icons.school,
+                      title: "Educação Ambiental",
+                      description: "Dicas e quizzes sobre separação correta dos resíduos.",
+                    ),
+                    /*
+                    _HomePageCard(
                       redirectRoute: '/schedule',
                       icon: Icons.calendar_today,
                       title: "Agendamento de Coleta",
@@ -115,17 +140,14 @@ class _HomePageState extends State<HomePage> {
                       description: "Ganhe pontos e recompensas por reciclagem correta.",
                     ),
                     _HomePageCard(
-                      redirectRoute: '/education',
-                      icon: Icons.school,
-                      title: "Educação Ambiental",
-                      description: "Dicas e quizzes sobre separação correta dos resíduos.",
-                    ),
-                    _HomePageCard(
                       redirectRoute: '/history',
                       icon: Icons.history,
                       title: "Histórico",
                       description: "Acompanhe suas coletas e impacto ambiental.",
                     ),
+                    */
+                    
+                    
                   ],
                 ),
 
@@ -160,7 +182,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/schedule');
+                            Navigator.pushNamed(context, '/register-pickup');
                           },
                           icon: const Icon(Icons.add_shopping_cart),
                           label: const Text("Agendar Coleta"),
