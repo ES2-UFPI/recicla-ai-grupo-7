@@ -4,7 +4,7 @@ from pydantic import BaseModel,Field, field_validator
 class UserSignUp(BaseModel):
     name: str = Field(...,  description="Nome do usuario", example="Jane Doe")
     email: str = Field(...,  description="Email do usuario", example="jane.doe@example.com")
-    password: str = Field(...,  description="Senha do usuario", example="strongpassword")
+    password: str = Field(...,  description="Senha do usuario", example="Senha@123")
     role: str = Field(..., pattern="^(PRODUTOR|COLETOR|COOPERATIVA|ADMIN)$")
 
     @field_validator('email')
@@ -47,7 +47,6 @@ class TokenUser(BaseModel):
 class UserLogin(BaseModel):
     email: str = Field(...,  description="Email do usuario", example="jane.doe@example.com")
     password: str = Field(...,  description="Senha do usuario", example="strongpassword")
-
     @field_validator("email")
     def validate_email(cls, value: str):
         if "@" not in value:

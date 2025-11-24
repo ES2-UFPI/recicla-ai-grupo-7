@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from src.schemas import return_schema
-from src.routes import auth_router, residue_router
+from src.routes import auth_router, residue_router, address_router
 
 app = FastAPI()
 create_database()
@@ -21,6 +21,7 @@ app.add_middleware(
 #routers
 app.include_router(auth_router.router)
 app.include_router(residue_router.router)
+app.include_router(address_router.router)
 
 
 #handlers
