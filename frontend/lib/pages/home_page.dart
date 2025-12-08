@@ -30,6 +30,78 @@ class _HomePageState extends State<HomePage> {
     return jsonDecode(response.body);
   }
 
+  List<Widget> _buildCards(String role) {
+    final List<Widget> cards = [];
+
+    // ADMIN tem o card extra de cadastro de material
+    if (role == 'ADMIN') {
+      cards.add(
+        const _HomePageCard(
+          redirectRoute: '/register-material',
+          icon: Icons.add_box,
+          title: "Cadastrar Material",
+          description: "Adicione novos tipos de materiais recicláveis ao sistema.",
+        ),
+      );
+    }
+
+    // Cards comuns a PRODUTOR e COLETOR
+    cards.addAll([
+      const _HomePageCard(
+        redirectRoute: '/list-materials',
+        icon: Icons.list,
+        title: "Listar Materiais",
+        description: "Listar todos os tipos de materiais recicláveis ao sistema.",
+      ),
+    ]);
+
+    // Só PRODUTOR agenda coleta
+    if (role == 'PRODUTOR' || role == 'ADMIN') {
+      cards.add(
+        const _HomePageCard(
+          redirectRoute: '/register-pickup',
+          icon: Icons.add_shopping_cart,
+          title: "Registrar Coleta",
+          description: "Agende uma nova coleta de resíduos recicláveis.",
+        ),
+      );
+    }
+    if (role == 'COLETOR' || role == 'ADMIN') {
+      cards.add(
+        const _HomePageCard(
+          redirectRoute: '/points',
+          icon: Icons.map,
+          title: "Mapa de Coleta",
+          description: "Veja no mapa os pontos de coleta disponíveis.",
+      ),
+    );
+  }
+
+    // PRODUTOR e COLETOR têm “Minhas Coletas”
+    if (role == 'PRODUTOR' || role == 'COLETOR' || role == 'ADMIN') {
+      cards.add(
+        const _HomePageCard(
+          redirectRoute: '/my-pickups',
+          icon: Icons.history,
+          title: "Minhas Coletas",
+          description: "Veja o histórico e status das suas coletas.",
+        ),
+      );
+    }
+
+    // Educação Ambiental liberada pra todo mundo
+    cards.add(
+      const _HomePageCard(
+        redirectRoute: '/education',
+        icon: Icons.school,
+        title: "Educação Ambiental",
+        description: "Dicas e quizzes sobre separação correta dos resíduos.",
+      ),
+    );
+
+    return cards;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -56,6 +128,7 @@ class _HomePageState extends State<HomePage> {
           }
 
           final role = snapshot.data?['data']?['role'] ?? 'USER';
+          final cards = _buildCards(role);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -82,78 +155,11 @@ class _HomePageState extends State<HomePage> {
                   childAspectRatio: 3 / 4,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  children: [
-                    if (role == 'ADMIN')
-                      _HomePageCard(
-                        redirectRoute: '/register-material',
-                        icon: Icons.add_box,
-                        title: "Cadastrar Material",
-                        description: "Adicione novos tipos de materiais recicláveis ao sistema.",
-                      ),
-                    _HomePageCard(
-                        redirectRoute: '/list-materials',
-                        icon: Icons.list,
-                        title: "Listar Materiais",
-                        description: "Listar todos os tipos de materiais recicláveis ao sistema.",
-                      ),
-                    _HomePageCard(
-                      redirectRoute: '/register-pickup',
-                      icon: Icons.add_shopping_cart,
-                      title: "Registrar Coleta",
-                      description: "Agende uma nova coleta de resíduos recicláveis.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/my-pickups',
-                      icon: Icons.history,
-                      title: "Minhas Coletas",
-                      description: "Veja o histórico e status das suas coletas agendadas.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/education',
-                      icon: Icons.school,
-                      title: "Educação Ambiental",
-                      description: "Dicas e quizzes sobre separação correta dos resíduos.",
-                    ),
-                    /*
-                    _HomePageCard(
-                      redirectRoute: '/schedule',
-                      icon: Icons.calendar_today,
-                      title: "Agendamento de Coleta",
-                      description: "Agende datas e horários para coleta dos seus resíduos.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/notifications',
-                      icon: Icons.notifications,
-                      title: "Notificações",
-                      description: "Receba alertas sobre coletas, pontos e novidades.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/points',
-                      icon: Icons.map,
-                      title: "Pontos de Coleta",
-                      description: "Visualize pontos de coleta próximos na sua região.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/reward',
-                      icon: Icons.emoji_events,
-                      title: "Recompensas",
-                      description: "Ganhe pontos e recompensas por reciclagem correta.",
-                    ),
-                    _HomePageCard(
-                      redirectRoute: '/history',
-                      icon: Icons.history,
-                      title: "Histórico",
-                      description: "Acompanhe suas coletas e impacto ambiental.",
-                    ),
-                    */
-                    
-                    
-                  ],
+                  children: cards,
                 ),
 
                 const SizedBox(height: 24),
 
-                // Call to action
                 Center(
                   child: Container(
                     padding: const EdgeInsets.all(16),
