@@ -18,6 +18,7 @@ class ApiService {
     } catch (e) {
       throw Exception('Failed to login: $e');
     }
+    
   }
 
   static const String _signupEndpoint =
@@ -163,5 +164,46 @@ class ApiService {
       throw Exception('Failed to fetch pickups: $e');
     }
   }
+    static const String _myAddressesEndpoint =
+      "http://${AppConfig.apiHost}:${AppConfig.apiPort}/address/my";
+
+  static Future<http.Response> getMyAddresses(String bearerToken) async {
+    final url = Uri.parse(_myAddressesEndpoint);
+    try {
+      return http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch addresses: $e');
+    }
+  }
+
+  static const String _registerAddressEndpoint =
+      "http://${AppConfig.apiHost}:${AppConfig.apiPort}/address/register";
+
+  static Future<http.Response> registerAddress({
+    required String bearerToken,
+    required Map<String, dynamic> addressData,
+  }) async {
+    final url = Uri.parse(_registerAddressEndpoint);
+    try {
+      return http.post(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(addressData),
+      );
+    } catch (e) {
+      throw Exception('Failed to register address: $e');
+    }
+  }
+  
+
 
 }

@@ -1,43 +1,36 @@
-from flask import Flask
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-import src.database as database
-import dbg
-
-_server: 'Server' = None
-
-class Server:
-    def __init__(self, host='localhost', port=5000):
-        self.host = host
-        self.port = port
-        self.app = Flask(__name__)
-        
+from src.routes.residue_router import router as residue_router
+from src.database.connection import create_database
+from src.routes.auth_router import router as auth_router
 
 
-    @staticmethod
-    def init(host='localhost', port=5000):
-        global _server
-        if _server is None:
-            _server = Server(host, port)
-        return _server
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Recicla AI API",
+        version="1.0.0",
+    )
 
-    @staticmethod
-    def instance():
-        global _server
-        if _server is None:
-            raise RuntimeError("Server not initialized. Call Server.init() first.")
-        return _server
+    # CORS – pode ajustar os domínios permitidos depois
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-    @staticmethod
-    def run():
-        from routes.residue_router import prq
-        
-        global _server
-        if _server is None:
-            raise RuntimeError("Server not initialized. Call Server.init() first.")
-        dbg.log_info("Starting _server...")
+    # Inclui as rotas de resíduos
+    app.include_router(residue_router)
+    app.include_router(auth_router)
 
-        # Registra as rotas
-        _server.app.register_blueprint(prq, url_prefix='/')
+    @app.on_event("startup")
+    async def startup_event():
+        # cria as tabelas do banco, se ainda não existirem
+        create_database()
 
-        dbg.log_info(f"Server running on {_server.host}:{_server.port}")
-        _server.app.run(host=_server.host, port=_server.port, debug=True)
+    return app
+
+
+app = create_app()

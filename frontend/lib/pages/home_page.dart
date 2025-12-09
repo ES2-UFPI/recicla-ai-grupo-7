@@ -40,7 +40,8 @@ class _HomePageState extends State<HomePage> {
           redirectRoute: '/register-material',
           icon: Icons.add_box,
           title: "Cadastrar Material",
-          description: "Adicione novos tipos de materiais recicláveis ao sistema.",
+          description:
+              "Adicione novos tipos de materiais recicláveis ao sistema.",
         ),
       );
     }
@@ -51,11 +52,12 @@ class _HomePageState extends State<HomePage> {
         redirectRoute: '/list-materials',
         icon: Icons.list,
         title: "Listar Materiais",
-        description: "Listar todos os tipos de materiais recicláveis ao sistema.",
+        description:
+            "Listar todos os tipos de materiais recicláveis ao sistema.",
       ),
     ]);
 
-    // Só PRODUTOR agenda coleta
+    // Só PRODUTOR (ou ADMIN) agenda coleta
     if (role == 'PRODUTOR' || role == 'ADMIN') {
       cards.add(
         const _HomePageCard(
@@ -66,6 +68,8 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
+
+    // COLETOR (ou ADMIN) vê o mapa de coleta
     if (role == 'COLETOR' || role == 'ADMIN') {
       cards.add(
         const _HomePageCard(
@@ -73,11 +77,11 @@ class _HomePageState extends State<HomePage> {
           icon: Icons.map,
           title: "Mapa de Coleta",
           description: "Veja no mapa os pontos de coleta disponíveis.",
-      ),
-    );
-  }
+        ),
+      );
+    }
 
-    // PRODUTOR e COLETOR têm “Minhas Coletas”
+    // PRODUTOR, COLETOR e ADMIN têm “Minhas Coletas”
     if (role == 'PRODUTOR' || role == 'COLETOR' || role == 'ADMIN') {
       cards.add(
         const _HomePageCard(
@@ -95,7 +99,8 @@ class _HomePageState extends State<HomePage> {
         redirectRoute: '/education',
         icon: Icons.school,
         title: "Educação Ambiental",
-        description: "Dicas e quizzes sobre separação correta dos resíduos.",
+        description:
+            "Dicas e quizzes sobre separação correta dos resíduos.",
       ),
     );
 
@@ -137,9 +142,10 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   "Bem-vindo ao Recicla Aí!",
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -147,7 +153,6 @@ class _HomePageState extends State<HomePage> {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
-
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -157,9 +162,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisSpacing: 16,
                   children: cards,
                 ),
-
                 const SizedBox(height: 24),
-
                 Center(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -171,30 +174,46 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Text(
                           "Comece a reciclar hoje!",
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary,
                               ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Agende sua coleta, ganhe recompensas e ajude o meio ambiente.",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary,
                               ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/register-pickup');
+                            Navigator.pushNamed(
+                                context, '/register-pickup');
                           },
-                          icon: const Icon(Icons.add_shopping_cart),
+                          icon:
+                              const Icon(Icons.add_shopping_cart),
                           label: const Text("Agendar Coleta"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                            foregroundColor: Theme.of(context).colorScheme.primary,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .onPrimary,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary,
                           ),
                         ),
                       ],
@@ -210,7 +229,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// === _HomePageCard (sem alterações) ===
+// === _HomePageCard (sem alterações de lógica) ===
 class _HomePageCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -255,14 +274,18 @@ class _HomePageCard extends StatelessWidget {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
                             shape: BoxShape.circle,
                           ),
                           padding: EdgeInsets.all(width * 0.05),
                           child: Icon(
                             icon,
                             size: iconSize,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                           ),
                         ),
                         SizedBox(height: spacing),
@@ -270,7 +293,10 @@ class _HomePageCard extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           child: Text(
                             title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: titleFont,
                                 ),
@@ -282,9 +308,14 @@ class _HomePageCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             description,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
                                   fontSize: bodyFont,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                             textAlign: TextAlign.center,
                             maxLines: 3,
@@ -305,13 +336,17 @@ class _HomePageCard extends StatelessWidget {
                       icon: const Icon(Icons.arrow_forward_ios, size: 14),
                       label: const Text("Acessar"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        padding: EdgeInsets.symmetric(vertical: height * 0.02),
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                        padding: EdgeInsets.symmetric(
+                            vertical: height * 0.02),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        textStyle: TextStyle(fontSize: bodyFont * 0.9),
+                        textStyle:
+                            TextStyle(fontSize: bodyFont * 0.9),
                       ),
                     ),
                   ),

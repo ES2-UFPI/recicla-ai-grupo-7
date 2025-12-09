@@ -5,55 +5,41 @@ from fastapi import HTTPException
 from jose import JWTError, jwt
 import os
 from dotenv import load_dotenv
+from typing import Any
 
 from src.utils import hash_providers
 
 # config
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
+_SECRET_KEY_ENV = os.getenv("SECRET_KEY")
 
-SECRET_KEY = api_key
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRES_MINUTES = 60  # 1 hora
-REFRESH_TOKEN_EXPIRES_DAYS = 7 # 7 dias
+# Garante em tempo de execução que é uma string válida
+if not _SECRET_KEY_ENV:
+    raise RuntimeError("SECRET_KEY não configurada. Defina SECRET_KEY no arquivo .env.")
+
+# A partir daqui, para o Pylance, SECRET_KEY é sempre str (sem None)
+SECRET_KEY: str = _SECRET_KEY_ENV
+
+ALGORITHM: str = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
-    """
-    Cria um access token JWT de curta duração
-    """
-    data = data.copy()
-
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
-
-    data.update({
-        "exp": expire,
-        "type": "access" # Identifica como access token
-        })
-
-    token_jwt = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
-
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    token_jwt: str = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return token_jwt
 
-def create_refresh_token(data: dict) -> str:
-    """
-    Cria um refresh token JWT de longa duração
-    """
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRES_DAYS)
-    
-    to_encode.update({
-        "exp": expire,
-        "type": "refresh"  # Identifica como refresh token
-    })
-    
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
 
+def create_refresh_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire})
+    token_jwt: str = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return token_jwt
 
 
 def hash_token(token: str) -> str:
@@ -71,55 +57,29 @@ def hash_token(token: str) -> str:
 
 
 def verify_access_token(token: str) -> str:
-    """
-    Verifica e decodifica um access token
-    Retorna o user_id (sub) se válido
-    """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        if payload.get("type") != "access":
-            raise HTTPException(
-                status_code=401, 
-                detail="Token inválido: tipo incorreto"
-            )
-        
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Token inválido")
-        
-        return user_id
-        
-    except JWTError as e:
-        logging.error(f"Erro ao verificar access token: {e}")
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+        payload: dict[str, Any] = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido.")
 
-    return user_id
+    sub = payload.get("sub")
+    if not isinstance(sub, str):
+        raise HTTPException(status_code=401, detail="Token inválido.")
+
+    return sub  # aqui o tipo já é str
+
 
 def verify_refresh_token(token: str) -> str:
-    """
-    Verifica e decodifica um refresh token
-    Retorna o user_id (sub) se válido
-    """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        # Verifica se é um refresh token
-        if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=401, 
-                detail="Token inválido: tipo incorreto"
-            )
-        
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Token inválido")
-        
-        return user_id
-        
-    except JWTError as e:
-        logging.error(f"Erro ao verificar refresh token: {e}")
-        raise HTTPException(status_code=401, detail="Refresh token inválido ou expirado")
+        payload: dict[str, Any] = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido.")
+
+    sub = payload.get("sub")
+    if not isinstance(sub, str):
+        raise HTTPException(status_code=401, detail="Token inválido.")
+
+    return sub
     
 def decode_token(token: str) -> dict:
     """

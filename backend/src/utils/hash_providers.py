@@ -1,11 +1,11 @@
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
-def generate_hash(text):
+def generate_hash(text: str) -> str:
     return pwd_context.hash(text)
 
 
-def verify_hash(text, hashed_text):
-    return pwd_context.verify(text, hashed_text)
+def verify_hash(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)

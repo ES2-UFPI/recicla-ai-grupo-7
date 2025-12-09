@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
+import 'package:recicla_ai_grupo_7_frontend/models/address.dart';
 import 'package:recicla_ai_grupo_7_frontend/services/api_service.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_app_bar.dart';
 
@@ -16,11 +17,16 @@ class RegisterPickupPage extends StatefulWidget {
 class _RegisterPickupPageState extends State<RegisterPickupPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _addressController = TextEditingController();
   DateTime? _scheduledTime;
 
+  // materiais
   List<dynamic> _materials = [];
   bool _loadingMaterials = true;
+
+  // endereços
+  List<Address> _addresses = [];
+  bool _loadingAddresses = true;
+  String? _selectedAddressId;
 
   bool _isSubmitting = false;
   List<String> _errors = [];
@@ -35,6 +41,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
   void initState() {
     super.initState();
     _loadMaterials();
+    _loadAddresses();
   }
 
   Future<void> _loadMaterials() async {
@@ -44,7 +51,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
       final response = await ApiService.listMaterials(token);
       final body = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && body["success"] == true) {
         setState(() {
           _materials = body["data"] ?? [];
           _loadingMaterials = false;
@@ -63,10 +70,33 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _addressController.dispose();
-    super.dispose();
+  Future<void> _loadAddresses() async {
+    final token = context.read<AuthCubit>().state?.accessToken ?? '';
+
+    try {
+      final response = await ApiService.getMyAddresses(token);
+      final body = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && body['success'] == true) {
+        final List<dynamic> data = body['data'] ?? [];
+        setState(() {
+          _addresses = data
+              .map((a) => Address.fromJson(a as Map<String, dynamic>))
+              .toList();
+          _loadingAddresses = false;
+        });
+      } else {
+        setState(() {
+          _loadingAddresses = false;
+          _errors = ["Falha ao carregar endereços."];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _loadingAddresses = false;
+        _errors = ["Erro de conexão ao carregar endereços."];
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -74,6 +104,11 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
 
     if (_scheduledTime == null) {
       setState(() => _errors = ["Selecione uma data e horário da coleta."]);
+      return;
+    }
+
+    if (_selectedAddressId == null) {
+      setState(() => _errors = ["Selecione um endereço."]);
       return;
     }
 
@@ -91,7 +126,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
     final token = context.read<AuthCubit>().state?.accessToken ?? '';
 
     final payload = {
-      "address_id": _addressController.text.trim(),
+      "address_id": _selectedAddressId,
       "scheduled_time": _scheduledTime!.toIso8601String(),
       "items": _items,
     };
@@ -105,13 +140,13 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
       final body = jsonDecode(response.body);
 
       if (response.statusCode == 200 && body["success"] == true) {
-        setState(() {
-          _successMessage = "Coleta registrada com sucesso!";
-        });
-
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context);
-        });
+        // feedback e ir pro mapa
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Coleta registrada com sucesso!')),
+        );
+        if (mounted) {
+          Navigator.pushNamed(context, '/points');
+        }
       } else {
         final errs =
             (body["errors"] as List<dynamic>?)?.cast<String>() ??
@@ -122,7 +157,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
     } catch (e) {
       setState(() => _errors = ["Erro de conexão."]);
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -152,6 +187,14 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
     });
   }
 
+  Future<void> _openRegisterAddress() async {
+    final result = await Navigator.pushNamed(context, '/register-address');
+    // se cadastrou endereço, recarrega a lista
+    if (result == true) {
+      _loadAddresses();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -178,31 +221,58 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
               ),
               const SizedBox(height: 24),
 
-              if (_loadingMaterials)
+              if (_loadingMaterials || _loadingAddresses)
                 const Center(child: CircularProgressIndicator()),
 
-              if (!_loadingMaterials)
+              if (!_loadingMaterials && !_loadingAddresses)
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
                       // ======================= ENDEREÇO =======================
-                      TextFormField(
-                        controller: _addressController,
-                        decoration: InputDecoration(
-                          labelText: "Endereço",
-                          prefixIcon: const Icon(Icons.home_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedAddressId,
+                              items: _addresses
+                                  .map(
+                                    (a) => DropdownMenuItem<String>(
+                                      value: a.id,
+                                      child: Text(a.fullText),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedAddressId = value;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                labelText: "Endereço",
+                                prefixIcon:
+                                    const Icon(Icons.home_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return "Selecione um endereço";
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return "Informe o endereço";
-                          }
-                          return null;
-                        },
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _openRegisterAddress,
+                            icon: const Icon(Icons.add_location_alt),
+                            tooltip: "Cadastrar novo endereço",
+                          ),
+                        ],
                       ),
+
                       const SizedBox(height: 20),
 
                       // ======================= DATA E HORA ======================
@@ -211,7 +281,8 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                         child: InputDecorator(
                           decoration: InputDecoration(
                             labelText: "Data e Hora da Coleta",
-                            prefixIcon: const Icon(Icons.calendar_month_outlined),
+                            prefixIcon:
+                                const Icon(Icons.calendar_month_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -220,8 +291,8 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                             _scheduledTime == null
                                 ? "Selecione"
                                 : "${_scheduledTime!.day}/${_scheduledTime!.month}/${_scheduledTime!.year} "
-                                  "às ${_scheduledTime!.hour.toString().padLeft(2, '0')}:"
-                                  "${_scheduledTime!.minute.toString().padLeft(2, '0')}",
+                                    "às ${_scheduledTime!.hour.toString().padLeft(2, '0')}:"
+                                    "${_scheduledTime!.minute.toString().padLeft(2, '0')}",
                           ),
                         ),
                       ),
@@ -242,7 +313,8 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                         Card(
                           elevation: 3,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.only(bottom: 16),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -250,7 +322,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                               children: [
                                 // Material
                                 DropdownButtonFormField(
-                                  initialValue: _items[i]["material_id"],
+                                  value: _items[i]["material_id"],
                                   items: _materials
                                       .map<DropdownMenuItem<String>>(
                                         (m) => DropdownMenuItem(
@@ -267,7 +339,8 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                   decoration: InputDecoration(
                                     labelText: "Material",
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
                                     ),
                                   ),
                                   validator: (v) =>
@@ -275,14 +348,15 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Quantity
+                                // Quantidade
                                 TextFormField(
                                   initialValue:
                                       _items[i]["quantity"].toString(),
                                   decoration: InputDecoration(
                                     labelText: "Quantidade",
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
                                     ),
                                   ),
                                   keyboardType: TextInputType.number,
@@ -293,14 +367,15 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Weight
+                                // Peso
                                 TextFormField(
                                   initialValue:
                                       _items[i]["weight_kg"].toString(),
                                   decoration: InputDecoration(
                                     labelText: "Peso (kg)",
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
                                     ),
                                   ),
                                   keyboardType: TextInputType.number,
@@ -315,8 +390,10 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: IconButton(
-                                      icon: const Icon(Icons.delete_forever,
-                                          color: Colors.red),
+                                      icon: const Icon(
+                                        Icons.delete_forever,
+                                        color: Colors.red,
+                                      ),
                                       onPressed: () {
                                         setState(() => _items.removeAt(i));
                                       },
@@ -327,7 +404,6 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                           ),
                         ),
 
-                      // Botão de adicionar item
                       OutlinedButton.icon(
                         onPressed: () {
                           setState(() {
@@ -352,14 +428,16 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade300),
+                            border:
+                                Border.all(color: Colors.red.shade300),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: _errors.map((e) {
                               return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                ),
                                 child: Text(
                                   "• $e",
                                   style: const TextStyle(
@@ -372,14 +450,15 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                           ),
                         ),
 
-                      // ======================= SUCESSO ==========================
                       if (_successMessage != null)
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.green.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green.shade300),
+                            border: Border.all(
+                              color: Colors.green.shade300,
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -401,7 +480,6 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
 
                       const SizedBox(height: 24),
 
-                      // ======================= BOTÃO SUBMIT ======================
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -410,9 +488,11 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(
-                                          Colors.white)),
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(
+                                            Colors.white),
+                                  ),
                                 )
                               : const Icon(Icons.add_task),
                           label: Text(
@@ -420,11 +500,14 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
                                 ? "Enviando..."
                                 : "Registrar Coleta",
                             style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           onPressed: _isSubmitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

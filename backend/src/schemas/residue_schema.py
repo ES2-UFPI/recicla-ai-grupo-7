@@ -50,5 +50,15 @@ class PickupRequestOut(BaseModel):
         "from_attributes": True
     }
 
+class PickupMapPoint(BaseModel):
+    id: str
+    status: str
+    latitude: float
+    longitude: float
+    address: str
+
+    model_config = {
+        "from_attributes": True
+    }
 
 

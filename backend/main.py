@@ -5,7 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from src.schemas import return_schema
-from src.routes import auth_router, residue_router
+
+# IMPORTA CADA ROUTER DIRETAMENTE
+from src.routes.auth_router import router as auth_router
+from src.routes.residue_router import router as residue_router
+from src.routes.address_router import router as address_router  # 👈 novo
+
 
 app = FastAPI()
 create_database()
@@ -19,9 +24,9 @@ app.add_middleware(
 )
 
 #routers
-app.include_router(auth_router.router)
-app.include_router(residue_router.router)
-
+app.include_router(auth_router)
+app.include_router(residue_router)
+app.include_router(address_router)
 
 #handlers
 @app.exception_handler(RequestValidationError)

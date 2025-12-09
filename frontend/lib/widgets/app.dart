@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:recicla_ai_grupo_7_frontend/blocs/auth_bloc.dart';
 import 'package:recicla_ai_grupo_7_frontend/blocs/settings_bloc.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/app_page.dart';
-import 'package:recicla_ai_grupo_7_frontend/pages/collection_points_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/education_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/history_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/home_page.dart';
@@ -21,6 +20,9 @@ import 'package:recicla_ai_grupo_7_frontend/pages/schedule_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/settings_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/pages/video_detail_page.dart';
 import 'package:recicla_ai_grupo_7_frontend/utils/app_theme.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/register_address_page.dart';
+import 'package:recicla_ai_grupo_7_frontend/pages/pickup_map_screen.dart';
+
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -56,7 +58,8 @@ class App extends StatelessWidget {
                 return MaterialPageRoute(builder: (_) => const LoginPage());
               case '/register':
                 return MaterialPageRoute(builder: (_) => const RegisterPage());
-              
+              case '/register-address':
+                return MaterialPageRoute(builder: (_)=> const RegisterAddressPage());
               case '/home':
                 return MaterialPageRoute(builder: (_) => const HomePage());
               case '/settings':
@@ -70,7 +73,7 @@ class App extends StatelessWidget {
               case '/notifications':
                 return MaterialPageRoute(builder: (_) => const NotificationsPage());
               case '/points':
-                return MaterialPageRoute(builder: (_) => const CollectionPointsPage());
+                return MaterialPageRoute(builder: (_) => const PickupMapScreen());
               case '/reward':
                 return MaterialPageRoute(builder: (_) => const RewardPage());
               case '/history':
