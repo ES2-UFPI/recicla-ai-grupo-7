@@ -1,8 +1,9 @@
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from src.schemas import residue_schema as prs
 from src.models import models
-
+from typing import cast
+from datetime import datetime
 
 class ResidueRepo:
     def __init__(self, db: Session):
@@ -128,5 +129,61 @@ class ResidueRepo:
 
         except Exception as error:
             logging.error(f"Error get_pickups_with_location: {error}")
+            self.db.rollback()
+            raise
+    
+    def get_pickup_points_for_map(self) -> list[prs.PickupMapPoint]:
+        """
+        Retorna as coletas com endereço geolocalizado para exibição no mapa,
+        incluindo materiais, volume e horário.
+        """
+        try:
+            pickups = (
+                self.db.query(models.PickupRequest)
+                .join(models.Address, models.PickupRequest.address)
+                .options(
+                    joinedload(models.PickupRequest.address),
+                    joinedload(models.PickupRequest.items).joinedload(models.PickupRequestItem.material),
+                )
+                .filter(
+                    models.Address.latitude.isnot(None),
+                    models.Address.longitude.isnot(None),
+                )
+                .all()
+            )
+
+            result: list[prs.PickupMapPoint] = []
+
+            for pickup in pickups:
+                addr = pickup.address
+
+                address_str = f"{addr.street}, {addr.number} - {addr.city}/{addr.state}"
+
+                items = []
+                for item in pickup.items:
+                    material_type = item.material.type if item.material else "Desconhecido"
+
+                    item_schema = prs.PickupMapItem(
+                        material_type=material_type,
+                        quantity=item.quantity,
+                        weight_kg=float(item.weight_kg) if item.weight_kg is not None else None,
+                    )
+                    items.append(item_schema)
+
+                point = prs.PickupMapPoint(
+                    id=cast(str, pickup.id),
+                    status=cast(str, pickup.status),
+                    address=address_str,
+                    latitude=float(addr.latitude),
+                    longitude=float(addr.longitude),
+                    scheduled_time=cast(datetime | None, pickup.scheduled_time),
+                    items=items,
+                )
+
+                result.append(point)
+
+            return result
+        except Exception as error:
+            logging.error(f"Error ao buscar pontos para o mapa: {error}")
             self.db.rollback()
             raise

@@ -163,7 +163,7 @@ async def get_my_pickups(
 @router.get(
     "/map_points",
     status_code=status.HTTP_200_OK,
-    summary="Listar pontos de coleta com localização (para o mapa)",
+    summary="Listar pontos de coleta para o mapa",
     response_model=return_schema.ReturnTrueData[list[residue_schema.PickupMapPoint]],
     responses={
         status.HTTP_400_BAD_REQUEST: {"model": return_schema.ReturnError},
@@ -176,17 +176,16 @@ async def get_map_points(
     session: Session = Depends(get_db),
 ):
     """
-    Retorna todas as coletas que possuem endereço com latitude/longitude,
-    para exibição no mapa.
+    Retorna os pontos de coleta com endereço geolocalizado,
+    incluindo materiais, volume estimado e horário de disponibilidade.
     """
     try:
-        raw_points = residue_repo.ResidueRepo(session).get_pickups_with_location()
-        points_out = [residue_schema.PickupMapPoint(**p) for p in raw_points]
-        return return_schema.ReturnTrueData(data=points_out)
+        points = residue_repo.ResidueRepo(session).get_pickup_points_for_map()
+        return return_schema.ReturnTrueData(data=points)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao listar pontos no mapa: {str(e)}",
+            detail=f"Erro ao buscar pontos no mapa: {str(e)}",
         )
 
     

@@ -8,6 +8,8 @@ import 'package:recicla_ai_grupo_7_frontend/models/pickup_point.dart';
 import 'package:recicla_ai_grupo_7_frontend/services/pickup_api_service.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_app_bar.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_drawer.dart';
+import 'package:intl/intl.dart';
+
 
 class PickupMapScreen extends StatefulWidget {
   const PickupMapScreen({super.key});
@@ -18,6 +20,69 @@ class PickupMapScreen extends StatefulWidget {
 
 class _PickupMapScreenState extends State<PickupMapScreen> {
   late Future<List<PickupPoint>> _futurePoints;
+
+    void _showPointDetails(PickupPoint point) {
+    final theme = Theme.of(context);
+    final df = DateFormat('dd/MM/yyyy HH:mm');
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Detalhes da Coleta",
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                point.address,
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              if (point.scheduledTime != null)
+                Text(
+                  "Horário agendado: ${df.format(point.scheduledTime!)}",
+                  style: theme.textTheme.bodyMedium,
+                ),
+              const SizedBox(height: 8),
+              Text(
+                "Materiais: ${point.materialsSummary}",
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (point.totalWeightKg > 0)
+                Text(
+                  "Volume estimado: ${point.totalWeightKg.toStringAsFixed(1)} kg",
+                  style: theme.textTheme.bodyMedium,
+                ),
+              const SizedBox(height: 8),
+              Text(
+                "Status: ${point.status}",
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Fechar"),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   @override
   void initState() {
@@ -83,8 +148,8 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
                 point: p.latLng,
                 width: 40,
                 height: 40,
-                child: Tooltip(
-                  message: p.address,
+                child: GestureDetector(
+                  onTap:() => _showPointDetails(p),
                   child: const Icon(
                     Icons.location_on,
                     size: 36,

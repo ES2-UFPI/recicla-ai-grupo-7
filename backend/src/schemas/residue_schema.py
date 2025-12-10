@@ -1,5 +1,8 @@
 from pydantic import BaseModel,Field, field_validator
 from datetime import datetime
+from typing import Optional
+from sqlalchemy.orm import Mapped, mapped_column
+
 
 class RecyclableMaterial(BaseModel):
     type: str = Field(..., description="Type of recyclable material", examples=["plastic", "paper", "glass"])
@@ -50,15 +53,21 @@ class PickupRequestOut(BaseModel):
         "from_attributes": True
     }
 
+class PickupMapItem(BaseModel):
+    material_type: str = Field(..., description="Tipo de material")
+    quantity: Optional[int] = Field(default=None, description="Quantidade de itens")
+    weight_kg: Optional[float] = Field(default=None, description="Peso em kg (estimado)")
+
 class PickupMapPoint(BaseModel):
     id: str
     status: str
+    address: str
     latitude: float
     longitude: float
-    address: str
+    scheduled_time: Optional[datetime] = None
+    items: list[PickupMapItem] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True
     }
-
 

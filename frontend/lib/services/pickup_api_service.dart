@@ -6,21 +6,16 @@ import '../models/pickup_point.dart';
 
 class PickupApiService {
   final String token;
+  final String baseUrl;
 
-  PickupApiService({required this.token});
-
-  Uri _buildUri(String path) {
-    return Uri.parse("http://${AppConfig.apiHost}:${AppConfig.apiPort}$path");
-  }
+  PickupApiService({
+    required this.token,
+  }) : baseUrl = "http://${AppConfig.apiHost}:${AppConfig.apiPort}";
 
   Future<List<PickupPoint>> fetchPickupPoints() async {
-    print(">>> FetchPickupPoints() chamado!");
+    final url = Uri.parse("$baseUrl/residue/map_points");
 
-    final url = _buildUri("/residue/map_points");
-    
-    print(">>> URL chamada: $url");
-
-    final resp = await http.get(
+    final response = await http.get(
       url,
       headers: {
         "Authorization": "Bearer $token",
@@ -28,17 +23,15 @@ class PickupApiService {
       },
     );
 
-    print(">>> STATUS CODE: ${resp.statusCode}");
-    print(">>> BODY: ${resp.body}");
-
-    if (resp.statusCode != 200) {
-      throw Exception("Erro ao buscar pontos: ${resp.statusCode}");
+    if (response.statusCode != 200) {
+      throw Exception("Erro ao buscar pontos: ${response.body}");
     }
 
-    final body = jsonDecode(resp.body);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = body["data"] as List<dynamic>;
 
-    final List<dynamic> data = body["data"] ?? [];
-
-    return data.map((e) => PickupPoint.fromJson(e)).toList();
+    return data
+        .map((e) => PickupPoint.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }
