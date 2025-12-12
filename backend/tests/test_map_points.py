@@ -81,8 +81,4 @@ def teardown_module(module):
 
 
 def test_get_map_points_sem_auth():
-    # Se seu endpoint exige auth via token, este teste vai precisar
-    # montar o header Authorization. Aqui é só um esqueleto.
     response = client.get("/residue/map_points")
-    # Se tiver auth obrigatória, espere 401/403.
-    # Se não tiver, pode já verificar 200 e a estrutura do retorno.

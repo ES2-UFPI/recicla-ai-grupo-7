@@ -9,7 +9,7 @@ from src.schemas import return_schema
 # IMPORTA CADA ROUTER DIRETAMENTE
 from src.routes.auth_router import router as auth_router
 from src.routes.residue_router import router as residue_router
-from src.routes.address_router import router as address_router  # 👈 novo
+from src.routes.address_router import router as address_router  
 
 
 app = FastAPI()

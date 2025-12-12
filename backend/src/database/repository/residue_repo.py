@@ -62,7 +62,6 @@ class ResidueRepo:
             self.db.rollback()
             raise
 
-    # 👇 ESSE É O MÉTODO QUE O ROUTER ESTÁ USANDO
     def get_pickup_requests_by_producer(
         self, producer_id: str
     ) -> list[models.PickupRequest]:
@@ -91,7 +90,6 @@ class ResidueRepo:
             self.db.rollback()
             raise
 
-    # 👇 MÉTODO NOVO PARA O MAPA
     def get_pickups_with_location(self) -> list[dict]:
         """
         Retorna todas as coletas que possuem endereço com latitude/longitude,
