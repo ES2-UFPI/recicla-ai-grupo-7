@@ -160,11 +160,14 @@ class _MyPickupsPageState extends State<MyPickupsPage> {
                                 children: [
                                   const Icon(Icons.assignment_outlined, size: 20),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    "Coleta #${pickup['id']}",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                  Expanded(
+                                    child: Text(
+                                      "Coleta #${pickup['id']}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -177,9 +180,17 @@ class _MyPickupsPageState extends State<MyPickupsPage> {
                                   const Icon(Icons.home_outlined, size: 20),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(
-                                      "Endereço: ${pickup['address_id']}",
-                                      style: const TextStyle(fontSize: 15),
+                                    child: Builder(
+                                      builder: (_) {
+                                        final address =
+                                            pickup['address_text'] ?? pickup['address_id'];
+                                        return Text(
+                                          "Endereço: $address",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
@@ -210,6 +221,16 @@ class _MyPickupsPageState extends State<MyPickupsPage> {
                               const SizedBox(height: 8),
 
                               ...pickup["items"].map<Widget>((item) {
+                                // material_type vem do backend; se não vier,
+                                // faz fallback para material_id.
+                                final materialLabel =
+                                    item['material_type'] ??
+                                    item['materialLabel'] ?? // caso antigo
+                                    item['material_id'];
+
+                                final quantity = item['quantity'];
+                                final weight = item['weight_kg'];
+
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 8),
                                   padding: const EdgeInsets.all(12),
@@ -224,9 +245,15 @@ class _MyPickupsPageState extends State<MyPickupsPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text("Material ID: ${item['material_id']}"),
-                                      Text("Quantidade: ${item['quantity']}"),
-                                      Text("Peso (kg): ${item['weight_kg']}"),
+                                      Text(
+                                        "Material: $materialLabel",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text("Quantidade: $quantity"),
+                                      Text("Peso (kg): ${weight ?? '-'}"),
                                     ],
                                   ),
                                 );

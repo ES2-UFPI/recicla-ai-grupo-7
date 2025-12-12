@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +11,6 @@ import 'package:recicla_ai_grupo_7_frontend/models/pickup_point.dart';
 import 'package:recicla_ai_grupo_7_frontend/services/pickup_api_service.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_app_bar.dart';
 import 'package:recicla_ai_grupo_7_frontend/widgets/app_drawer.dart';
-
 class PickupMapScreen extends StatefulWidget {
   const PickupMapScreen({super.key});
 
@@ -22,14 +21,15 @@ class PickupMapScreen extends StatefulWidget {
 class _PickupMapScreenState extends State<PickupMapScreen> {
   late Future<List<PickupPoint>> _futurePoints;
 
-  /// Timer para atualizar o mapa automaticamente
   Timer? _autoRefreshTimer;
-
-  /// Flag para evitar múltiplas atualizações concorrentes
   bool _isRefreshing = false;
 
-  /// Intervalo de atualização automática (ajuste se quiser)
+  // intervalinho de atualização automática
   static const Duration _refreshInterval = Duration(seconds: 20);
+
+  /// Tipos de material selecionados no filtro.
+  /// Conjunto vazio = mostrar todos.
+  final Set<String> _selectedTypes = {};
 
   @override
   void initState() {
@@ -58,7 +58,6 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
   }
 
   void _startAutoRefresh() {
-    // Garante que não fiquem múltiplos timers
     _autoRefreshTimer?.cancel();
 
     _autoRefreshTimer = Timer.periodic(_refreshInterval, (_) async {
@@ -66,20 +65,25 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
 
       _isRefreshing = true;
       try {
-        // Cria um novo Future para o FutureBuilder reagir
         final future = _loadPoints();
         setState(() {
           _futurePoints = future;
         });
-        // Aguarda finalizar para não disparar outra atualização em paralelo
         await future;
-      } catch (e) {
-        // Aqui podemos só logar/ignorar para não quebrar o timer
-        // debugPrint('Erro ao atualizar pontos do mapa: $e');
+      } catch (_) {
+        // aqui a gente ignora erros pontuais do refresh
       } finally {
         _isRefreshing = false;
       }
     });
+  }
+
+  Future<void> _refreshNow() async {
+    final future = _loadPoints();
+    setState(() {
+      _futurePoints = future;
+    });
+    await future;
   }
 
   void _showPointDetails(PickupPoint point) {
@@ -144,13 +148,53 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
     );
   }
 
-  /// Permite também atualizar manualmente (pull-to-refresh se você quiser usar)
-  Future<void> _refreshNow() async {
-    final future = _loadPoints();
+  void _toggleTypeFilter(String type) {
     setState(() {
-      _futurePoints = future;
+      if (_selectedTypes.contains(type)) {
+        _selectedTypes.remove(type);
+      } else {
+        _selectedTypes.add(type);
+      }
     });
-    await future;
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedTypes.clear();
+    });
+  }
+
+  Widget _buildFilterBar(List<String> materialTypes) {
+    if (materialTypes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            FilterChip(
+              label: const Text("Todos"),
+              selected: _selectedTypes.isEmpty,
+              onSelected: (_) => _clearFilters(),
+            ),
+            const SizedBox(width: 8),
+            ...materialTypes.map(
+              (type) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: FilterChip(
+                  label: Text(type),
+                  selected: _selectedTypes.contains(type),
+                  onSelected: (_) => _toggleTypeFilter(type),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -198,9 +242,59 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
             );
           }
 
-          final LatLng center = points.first.latLng;
+          // Descobre todos os tipos de material presentes
+          final materialTypesSet = <String>{};
+          for (final p in points) {
+            for (final item in p.items) {
+              final t = item.materialType.trim();
+              if (t.isNotEmpty) {
+                materialTypesSet.add(t);
+              }
+            }
+          }
+          final materialTypes = materialTypesSet.toList()..sort();
 
-          final markers = points
+          // Aplica filtro: se não há tipos selecionados, mostra todos
+          List<PickupPoint> visiblePoints;
+          if (_selectedTypes.isEmpty) {
+            visiblePoints = points;
+          } else {
+            visiblePoints = points.where((p) {
+              final pointTypes =
+                  p.items.map((i) => i.materialType.trim()).toSet();
+              return pointTypes.any(_selectedTypes.contains);
+            }).toList();
+          }
+
+          // Se não há nenhum ponto compatível com o filtro, mostra mensagem
+          if (visiblePoints.isEmpty) {
+            return Column(
+              children: [
+                _buildFilterBar(materialTypes),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshNow,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 150),
+                        Center(
+                          child: Text(
+                            "Nenhum ponto encontrado para os filtros selecionados.",
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
+          final LatLng center = visiblePoints.first.latLng;
+
+          final markers = visiblePoints
               .map(
                 (p) => Marker(
                   point: p.latLng,
@@ -218,37 +312,44 @@ class _PickupMapScreenState extends State<PickupMapScreen> {
               )
               .toList();
 
-          // Envolve o mapa em RefreshIndicator para permitir "puxar pra atualizar"
-          return RefreshIndicator(
-            onRefresh: _refreshNow,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: FlutterMap(
-                      options: MapOptions(
-                        initialCenter: center,
-                        initialZoom: 15,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          subdomains: const ['a', 'b', 'c'],
+          return Column(
+            children: [
+              _buildFilterBar(materialTypes),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _refreshNow,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: constraints.maxHeight,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: center,
+                              initialZoom: 15,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                subdomains: const ['a', 'b', 'c'],
+                              ),
+                              MarkerLayer(markers: markers),
+                            ],
+                          ),
                         ),
-                        MarkerLayer(markers: markers),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 }
+
 

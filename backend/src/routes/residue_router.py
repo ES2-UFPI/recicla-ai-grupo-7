@@ -141,24 +141,45 @@ async def get_my_pickups(
     Retorna uma lista de coletas ou uma mensagem de erro.
     """
     try:
-        pickups = residue_repo.ResidueRepo(session).get_pickup_requests_by_producer(current_user.id)
-        pickups_out = []
+        repo = residue_repo.ResidueRepo(session)
+        pickups = repo.get_pickup_requests_by_producer(current_user.id)
+        pickups_out: list[residue_schema.PickupRequestOut] = []
 
         for pickup in pickups:
-            pickup_items = residue_repo.ResidueRepo(session).get_pickup_request_items(str(pickup.id))
-            pickup_items_out = [residue_schema.RecyclableMaterialItem.model_validate(item) for item in pickup_items]
+            # monta os itens com o tipo de material
+            pickup_items = repo.get_pickup_request_items(str(pickup.id))
+            pickup_items_out: list[residue_schema.RecyclableMaterialItem] = []
+
+            for item in pickup_items:
+                item_out = residue_schema.RecyclableMaterialItem.model_validate(item)
+                # usa relacionamento 'material' para pegar o nome/tipo
+                item_out.material_type = (
+                    item.material.type if getattr(item, "material", None) else None
+                )
+                pickup_items_out.append(item_out)
+
+            # monta o objeto da coleta
             pickup_out = residue_schema.PickupRequestOut.model_validate(pickup)
+
+            # endereço formatado (se existir)
+            if pickup.address:
+                addr = pickup.address
+                pickup_out.address_text = f"{addr.street}, {addr.number} - {addr.city}/{addr.state}"
+            
+            else:
+                pickup_out.address_text = None
+
             pickup_out.items = pickup_items_out
             pickups_out.append(pickup_out)
 
         return return_schema.ReturnTrueData(data=pickups_out)
-            
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao listar coletas: {str(e)}"
         )
+
 
 @router.get(
     "/map_points",

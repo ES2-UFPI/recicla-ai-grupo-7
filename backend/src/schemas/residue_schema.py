@@ -26,6 +26,11 @@ class RecyclableMaterialItem(BaseModel):
     quantity: int = Field(..., gt=0, description="Quantity of the material items")
     weight_kg: float | None = Field(default=None, description="Weight of the material items in kilograms")
 
+    material_type: str | None = Field(
+        default=None,
+        description="Human readable material type (e.g. 'Papel e Papelão')"
+    )
+
     model_config = {
         "from_attributes": True
     }
@@ -49,9 +54,12 @@ class PickupRequestOut(BaseModel):
     scheduled_time: datetime
     items: list[RecyclableMaterialItem] = Field(default_factory=list)
 
+    address_text: str | None = Field(default=None, description="Endereço completo da coleta")
+
     model_config = {
         "from_attributes": True
     }
+
 
 class PickupMapItem(BaseModel):
     material_type: str = Field(..., description="Tipo de material")
