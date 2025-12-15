@@ -1,6 +1,18 @@
 from pydantic import BaseModel,Field, field_validator
 from datetime import datetime
 
+class Address(BaseModel):
+    id: str
+    street: str
+    number: str
+    city: str
+    state: str
+    zipcode: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
 class RecyclableMaterial(BaseModel):
     type: str = Field(..., description="Type of recyclable material", examples=["plastic", "paper", "glass"])
     description: str | None = Field(default=None, description="Description of the recyclable material")

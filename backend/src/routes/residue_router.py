@@ -80,6 +80,37 @@ async def list_materials(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao listar materiais: {str(e)}"
         )
+
+@router.get(
+    "/addresses",
+    status_code=status.HTTP_200_OK,
+    summary="Listar endereços do usuário logado",
+    response_model=return_schema.ReturnTrueData[list[residue_schema.Address]],
+    responses = {
+        status.HTTP_401_UNAUTHORIZED: {"model": return_schema.ReturnError},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": return_schema.ReturnError},
+    }
+)
+async def list_user_addresses(
+    current_user: user_schema.TokenUser = Depends(get_logged_user),
+    session: Session = Depends(get_db)
+):
+    """
+    Endpoint para listar todos os endereços do usuário atualmente logado.
+
+    - **current_user**: Usuário atualmente logado.
+    - **session**: Sessão do banco de dados.
+
+    Retorna lista de endereços do usuário.
+    """
+    try:
+        addresses = residue_repo.ResidueRepo(session).get_user_addresses(current_user.id)
+        return return_schema.ReturnTrueData(data=[residue_schema.Address.model_validate(addr) for addr in addresses])
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar endereços: {str(e)}"
+        )
     
 @router.post(
     "/register_pickup",

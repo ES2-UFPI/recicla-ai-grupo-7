@@ -198,5 +198,22 @@ class ApiService {
     }
   }
 
+  static const String _addressesEndpoint =
+      "http://${AppConfig.apiHost}:${AppConfig.apiPort}/residue/addresses";
 
+  /// Get user addresses for selecting during pickup registration
+  static Future<http.Response> getAddresses(String bearerToken) async {
+    final url = Uri.parse(_addressesEndpoint);
+    try {
+      return http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch addresses: $e');
+    }
+  }
 }

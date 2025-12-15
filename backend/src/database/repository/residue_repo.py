@@ -129,3 +129,13 @@ class ResidueRepo:
             logging.error(f"Error: {error}")
             self.db.rollback()
             raise
+    def get_user_addresses(self, user_id: str) -> list[models.Address]:
+        """Get all addresses for a specific user"""
+        try:
+            addresses = self.db.query(models.Address).filter(
+                models.Address.user_id == user_id
+            ).all()
+            return addresses
+        except Exception as error:
+            logging.error(f"Error fetching user addresses: {error}")
+            raise

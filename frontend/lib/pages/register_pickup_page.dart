@@ -16,11 +16,13 @@ class RegisterPickupPage extends StatefulWidget {
 class _RegisterPickupPageState extends State<RegisterPickupPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _addressController = TextEditingController();
+  String? _selectedAddressId;
   DateTime? _scheduledTime;
 
   List<dynamic> _materials = [];
+  List<dynamic> _addresses = [];
   bool _loadingMaterials = true;
+  bool _loadingAddresses = true;
 
   bool _isSubmitting = false;
   List<String> _errors = [];
@@ -35,6 +37,33 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
   void initState() {
     super.initState();
     _loadMaterials();
+    _loadAddresses();
+  }
+
+  Future<void> _loadAddresses() async {
+    final token = context.read<AuthCubit>().state?.accessToken ?? '';
+
+    try {
+      final response = await ApiService.getAddresses(token);
+      final body = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _addresses = body["data"] ?? [];
+          _loadingAddresses = false;
+        });
+      } else {
+        setState(() {
+          _loadingAddresses = false;
+          _errors = ["Falha ao carregar endereços."];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _loadingAddresses = false;
+        _errors = ["Erro de conexão ao carregar endereços."];
+      });
+    }
   }
 
   Future<void> _loadMaterials() async {
@@ -65,12 +94,16 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
 
   @override
   void dispose() {
-    _addressController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedAddressId == null) {
+      setState(() => _errors = ["Selecione um endereço."]);
+      return;
+    }
 
     if (_scheduledTime == null) {
       setState(() => _errors = ["Selecione uma data e horário da coleta."]);
@@ -91,7 +124,7 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
     final token = context.read<AuthCubit>().state?.accessToken ?? '';
 
     final payload = {
-      "address_id": _addressController.text.trim(),
+      "address_id": _selectedAddressId,
       "scheduled_time": _scheduledTime!.toIso8601String(),
       "items": _items,
     };
@@ -178,31 +211,57 @@ class _RegisterPickupPageState extends State<RegisterPickupPage> {
               ),
               const SizedBox(height: 24),
 
-              if (_loadingMaterials)
+              if (_loadingMaterials || _loadingAddresses)
                 const Center(child: CircularProgressIndicator()),
 
-              if (!_loadingMaterials)
+              if (!_loadingMaterials && !_loadingAddresses)
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
                       // ======================= ENDEREÇO =======================
-                      TextFormField(
-                        controller: _addressController,
-                        decoration: InputDecoration(
-                          labelText: "Endereço",
-                          prefixIcon: const Icon(Icons.home_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      if (_loadingAddresses)
+                        const SizedBox(
+                          height: 56,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_addresses.isEmpty)
+                        const SizedBox(
+                          height: 56,
+                          child: Center(
+                            child: Text("Nenhum endereço disponível"),
                           ),
+                        )
+                      else
+                        DropdownButtonFormField<String>(
+                          value: _selectedAddressId,
+                          decoration: InputDecoration(
+                            labelText: "Endereço",
+                            prefixIcon: const Icon(Icons.home_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: _addresses.map<DropdownMenuItem<String>>((addr) {
+                            final street = addr['street'] ?? '';
+                            final number = addr['number'] ?? '';
+                            final city = addr['city'] ?? '';
+                            final displayText = '$street, $number - $city';
+                            return DropdownMenuItem<String>(
+                              value: addr['id'] as String,
+                              child: Text(displayText),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedAddressId = value);
+                          },
+                          validator: (_) {
+                            if (_selectedAddressId == null) {
+                              return "Selecione um endereço";
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return "Informe o endereço";
-                          }
-                          return null;
-                        },
-                      ),
                       const SizedBox(height: 20),
 
                       // ======================= DATA E HORA ======================
