@@ -75,3 +75,57 @@ class ResidueRepo:
             logging.error(f"Error: {error}")
             self.db.rollback()
             raise
+
+    def get_producer_collection_history(
+        self,
+        producer_id: str,
+        page: int = 1,
+        limit: int = 20,
+        status: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> list[models.PickupRequest]:
+        """
+        Retorna histórico de coletas do produtor com paginação e filtros opcionais.
+        Ordena por data de criação (mais recente primeiro).
+        """
+        try:
+            query = self.db.query(models.PickupRequest).filter(models.PickupRequest.producer_id == producer_id)
+
+            if status:
+                query = query.filter(models.PickupRequest.status == status)
+
+            # Parse dates if provided (YYYY-MM-DD or ISO8601)
+            def parse_date(d: str | None):
+                if not d:
+                    return None
+                try:
+                    # Try ISO8601 first
+                    return datetime.fromisoformat(d)
+                except Exception:
+                    try:
+                        return datetime.strptime(d, "%Y-%m-%d")
+                    except Exception:
+                        return None
+
+            start_dt = parse_date(start_date)
+            end_dt = parse_date(end_date)
+            if start_dt:
+                query = query.filter(models.PickupRequest.created_at >= start_dt)
+            if end_dt:
+                query = query.filter(models.PickupRequest.created_at <= end_dt)
+
+            query = query.order_by(models.PickupRequest.created_at.desc())
+
+            # Pagination
+            if page < 1:
+                page = 1
+            if limit < 1:
+                limit = 20
+            offset = (page - 1) * limit
+            results = query.offset(offset).limit(limit).all()
+            return results
+        except Exception as error:
+            logging.error(f"Error: {error}")
+            self.db.rollback()
+            raise

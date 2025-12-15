@@ -160,13 +160,96 @@ async def get_my_pickups(
             detail=f"Erro ao listar coletas: {str(e)}"
         )
     
+
+@router.get(
+    "/history",
+    status_code=status.HTTP_200_OK,
+    summary="Histórico de coletas do produtor",
+    response_model=return_schema.ReturnTrueData[list[residue_schema.PickupRequestOut]],
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Lista paginada do histórico de coletas do produtor autenticado.",
+            "model": return_schema.ReturnTrueData[list[residue_schema.PickupRequestOut]],
+        },
+        status.HTTP_400_BAD_REQUEST: {"model": return_schema.ReturnError, "description": "Parâmetros inválidos (ex.: radius=0)."},
+        status.HTTP_401_UNAUTHORIZED: {"model": return_schema.ReturnError, "description": "Token ausente ou inválido."},
+        status.HTTP_403_FORBIDDEN: {"model": return_schema.ReturnError, "description": "Apenas PRODUTOR pode acessar este recurso."},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": return_schema.ReturnError, "description": "Erro de validação nos parâmetros."},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Erro interno ao obter histórico."},
+    },
+    description=(
+        "Retorna o histórico de coletas realizadas pelo usuário com papel PRODUTOR.\n\n"
+        "Parâmetros opcionais:\n"
+        "- page: página atual (default: 1)\n"
+        "- limit: itens por página (default: 20)\n"
+        "- status_filter: filtra por status (ex.: 'completed', 'PENDENTE')\n"
+        "- start_date / end_date: filtra por intervalo de datas (ISO8601 ou YYYY-MM-DD)\n\n"
+        "Exemplo de resposta:\n"
+        "{ 'data': [ { 'id': 'pickup-001', 'items': [ ... ] } ] }"
+    )
+)
+async def get_producer_history(
+    current_user: user_schema.TokenUser = Depends(get_logged_user),
+    session: Session = Depends(get_db),
+    page: int = 1,
+    limit: int = 20,
+    status_filter: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """
+    Lista o histórico de coletas realizadas pelo usuário produtor autenticado.
+
+    Parâmetros:
+    - page: página atual (>=1)
+    - limit: itens por página (>=1)
+    - status_filter: filtra por status (ex.: "completed", "PENDENTE")
+    - start_date, end_date: intervalo de datas (ISO8601 ou YYYY-MM-DD)
+
+    Retorna:
+    - ReturnTrueData[List[PickupRequestOut]]
+    """
+    try:
+        if current_user.role != "PRODUTOR":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas usuários PRODUTOR podem visualizar seu histórico."
+            )
+
+        repo = residue_repo.ResidueRepo(session)
+        history = repo.get_producer_collection_history(
+            producer_id=current_user.id,
+            page=page,
+            limit=limit,
+            status=status_filter,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        pickups_out: list[residue_schema.PickupRequestOut] = []
+        for pickup in history:
+            items = repo.get_pickup_request_items(str(pickup.id))
+            items_out = [residue_schema.RecyclableMaterialItem.model_validate(i) for i in items]
+            pickup_out = residue_schema.PickupRequestOut.model_validate(pickup)
+            pickup_out.items = items_out
+            pickups_out.append(pickup_out)
+
+        return return_schema.ReturnTrueData(data=pickups_out)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter histórico: {str(e)}"
+        )
     
 
 
 
 
-    
-    
-    
+
+
+
+
 
 
