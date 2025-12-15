@@ -164,4 +164,39 @@ class ApiService {
     }
   }
 
+  static const String _historyEndpoint =
+      "http://${AppConfig.apiHost}:${AppConfig.apiPort}/residue/history";
+
+  /// Get producer history with optional pagination & filters
+  static Future<http.Response> getHistory({
+    required String bearerToken,
+    int page = 1,
+    int limit = 20,
+    String? status,
+    String? startDate,
+    String? endDate,
+  }) async {
+    final queryParams = {
+      "page": "$page",
+      "limit": "$limit",
+      if (status != null) "status": status,
+      if (startDate != null) "start_date": startDate,
+      if (endDate != null) "end_date": endDate,
+    };
+
+    final url = Uri.parse(_historyEndpoint).replace(queryParameters: queryParams);
+    try {
+      return http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch history: $e');
+    }
+  }
+
+
 }
