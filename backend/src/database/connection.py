@@ -23,6 +23,14 @@ def create_database():
     """Cria todas as tabelas no banco de dados"""
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created!")
+    
+    # Seed test data
+    from src.database.seed import seed_test_data
+    db = SessionLocal()
+    try:
+        seed_test_data(db)
+    finally:
+        db.close()
 
 
 def get_db():
